@@ -1,0 +1,60 @@
+name: 也门局势监控
+
+on:
+  schedule:
+    # UTC 0:10 = 北京时间 8:10 / UTC 12:10 = 北京时间 20:10
+    - cron: "10 0,12 * * *"
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 创建必要目录
+        run: mkdir -p data logs reports
+
+      - name: 运行监控程序
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          WECOM_WEBHOOK_KEY: ${{ secrets.WECOM_WEBHOOK_KEY }}
+          CI: "true"
+        run: python main.py
+
+      - name: 上传 DOCX 归档
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: yemen-report
+          path: reports/*.docx
+          retention-days: 30
+
+      - name: 提交报告到仓库（存档）
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "Yemen Monitor Bot"
+          git config user.email "bot@yemen-monitor.local"
+          git add reports/*.docx reports/latest.md 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "无新报告，跳过提交"
+          else
+            git commit -m "📰 $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M') 自动简报"
+            git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+          fi

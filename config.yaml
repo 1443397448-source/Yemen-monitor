@@ -1,0 +1,66 @@
+# 胡塞武装动态监控 · 配置文件
+
+keywords:
+  # 搜索型数据源（GDELT / Google / Bing / Yahoo / 百度）使用的查询词
+  core:
+    zh: ["也门", "胡塞", "胡塞武装"]
+    en: ["Yemen", "Houthi", "Houthis", "Ansarallah", "Ansar Allah"]
+    ar: ["اليمن", "الحوثي", "أنصار الله"]
+  # 订阅型媒体 RSS 的过滤词，标题或摘要命中任一即保留
+  filter:
+    zh: ["也门", "胡塞", "红海", "曼德海峡", "亚丁", "萨那", "荷台达", "马里卜", "塔伊兹"]
+    en: ["yemen", "houthi", "ansarallah", "ansar allah", "red sea", "bab al-mandab", "bab el-mandeb", "aden", "sanaa", "sana'a", "hodeidah", "hudaydah", "taiz", "marib"]
+    ar: ["اليمن", "الحوثي", "الحوثيين", "أنصار الله", "البحر الأحمر", "باب المندب", "عدن", "صنعاء", "الحديدة", "تعز", "مأرب"]
+
+# 各采集渠道开关
+sources:
+  gdelt: true          # GDELT 全球媒体库（英/中/阿三路查询，覆盖面最广）
+  google_news: true    # Google News（英文版 / 中文版 / 阿语版）
+  bing_news: true      # Bing News（英 / 中 / 阿三个市场）
+  yahoo_news: true     # Yahoo News 搜索（英文）
+  baidu: true          # 百度资讯搜索（中文，页面改版可能失效，失效不影响整体）
+  media_rss: true      # 下方固定媒体订阅（含中东阿语媒体）
+
+# 固定媒体订阅源，可自行增删
+media_feeds:
+  - {name: "BBC 中东频道", url: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml", lang: en}
+  - {name: "Al Jazeera English", url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en}
+  - {name: "Arab News", url: "https://www.arabnews.com/rss.xml", lang: en}
+  - {name: "Middle East Eye", url: "https://www.middleeasteye.net/rss", lang: en}
+  - {name: "France24 阿语", url: "https://www.france24.com/ar/rss", lang: ar}
+  - {name: "RT Arabic", url: "https://arabic.rt.com/rss/", lang: ar}
+  - {name: "中国新闻网-国际", url: "https://www.chinanews.com.cn/rss/world.xml", lang: zh, proxy: false}
+
+fetch:
+  timeout: 20          # 单请求超时（秒）
+  lookback_hours: 18   # 抓取时间窗口，略宽于12小时防漏
+  max_per_source: 80   # 每渠道每语种最多取多少条
+  # 境外源代理，如本机运行 Clash/V2Ray 等请填写，例如 "http://127.0.0.1:7890"
+  # 留空则直连；百度及标记 proxy: false 的源始终直连
+  proxy: "http://127.0.0.1:7897"
+  # 代理未运行时自动启动的 App 名称（留空则不自动启停）
+  proxy_app: "Clash Verge"
+  # 仅当代理是本程序自动启动的，运行结束后才退出它；
+  # 若运行前代理本来就开着，保持原样不动，避免打断你正在使用的网络
+  proxy_autostop: true
+
+dedup:
+  title_similarity: 0.92   # 标题相似度阈值，超过视为同一事件重复
+  compare_days: 4          # 与最近几天的历史条目比对
+
+summarize:
+  enabled: true
+  model: "claude-sonnet-4-6"
+  max_articles: 300        # 单次送入摘要的最大条目数
+  max_tokens: 8192         # Claude 输出上限
+
+report:
+  dir: "reports"
+
+push:
+  # 企业微信群机器人 → 完整报告文件直传（推荐，无字数限制）
+  # 需在 .env 配置 WECOM_WEBHOOK_KEY（从群机器人 Webhook URL 提取）
+  wecom: true
+  # Server酱 → 方糖个人微信（备用，有 32KB 字节限制）
+  # 需在 .env 配置 SERVERCHAN_SENDKEY
+  wechat: true

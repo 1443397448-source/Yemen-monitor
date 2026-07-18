@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+data/
+logs/
+.DS_Store
+# 本地报告不纳入git（云端运行时会单独commit）
+reports/
