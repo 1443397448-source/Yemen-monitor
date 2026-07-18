@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "Yemen Monitor Bot"
           git config user.email "bot@yemen-monitor.local"
-          git add reports/*.docx reports/latest.md 2>/dev/null || true
+          git add -f reports/*.docx reports/latest.md 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "无新报告，跳过提交"
           else
