@@ -2,6 +2,7 @@
 """也门与胡塞武装动态监控：单轮流程入口（代理启停 → 采集 → 去重 → AI 摘要 → 简报）。"""
 import logging
 import os
+import shutil
 import sys
 from collections import OrderedDict
 from datetime import datetime
@@ -122,18 +123,28 @@ def _run_round(cfg, core, flt, timeout, look, maxn, proxy, enabled):
         elif cat_text:
             log.info("主题分类生成完成 (%d字)", len(cat_text))
 
-    path = write_report(os.path.join(BASE, cfg["report"]["dir"]),
-                        new, len(articles), summary, cat_text, note, stats)
-    log.info("简报已生成：%s", path)
+    md_path, docx_path, report_name = write_report(
+        os.path.join(BASE, cfg["report"]["dir"]),
+        new, len(articles), summary, cat_text, note, stats)
+    log.info("简报已生成：%s", md_path)
 
     # 转换 DOCX
-    docx_path = path.replace(".md", ".docx")
     try:
-        md_to_docx(path, docx_path)
+        md_to_docx(md_path, docx_path)
         log.info("DOCX 已生成：%s", docx_path)
     except Exception as e:
         log.warning("DOCX 转换失败：%s", e)
-        docx_path = path  # 兜底：用 md 文件
+        docx_path = md_path  # 兜底
+
+    # 备份 DOCX 到桌面
+    backup_dir = os.path.expanduser("~/Desktop/科研与竞赛（研）/Yemen-每日资讯")
+    try:
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_path = os.path.join(backup_dir, f"{report_name}.docx")
+        shutil.copy2(docx_path, backup_path)
+        log.info("已备份至桌面：%s", backup_path)
+    except Exception as e:
+        log.warning("桌面备份失败：%s", e)
 
     push_cfg = cfg.get("push", {})
     push_title = datetime.now().strftime("也门简报 %m-%d %H:%M")

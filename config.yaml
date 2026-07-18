@@ -33,7 +33,7 @@ media_feeds:
 
 fetch:
   timeout: 20          # 单请求超时（秒）
-  lookback_hours: 18   # 抓取时间窗口，略宽于12小时防漏
+  lookback_hours: 12   # 检索时间窗口，严格锁定前12小时
   max_per_source: 80   # 每渠道每语种最多取多少条
   # 境外源代理，如本机运行 Clash/V2Ray 等请填写，例如 "http://127.0.0.1:7890"
   # 留空则直连；百度及标记 proxy: false 的源始终直连
